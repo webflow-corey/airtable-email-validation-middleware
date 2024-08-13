@@ -1,16 +1,21 @@
 // api/check-email.js
 import Airtable from "airtable";
+import cors from "micro-cors";
 
-export default async function handler(req, res) {
-  // CORS handling
-  const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : [];
 
+const corsMiddleware = cors({
+  allowMethods: ["POST", "OPTIONS"],
+  allowHeaders: ["Content-Type"],
+  origin: (origin) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return true;
+    }
+    return false;
+  },
+});
+
+async function handler(req, res) {
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -43,3 +48,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
+
+export default corsMiddleware(handler);
